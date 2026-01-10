@@ -19,11 +19,15 @@ class Roles(StrEnum):
     ADMIN = "admin"
     STAFF= "staff"
 
+class RoomType(StrEnum):
+    SINGLE = "single"
+    DOUBLE = "double"
+
 class Room(SQLModel, table=True):
     __tablename__="rooms" #type: ignore
     id: int| None = Field(default=None, primary_key=True)
     room_number: int = Field(unique=True)
-    room_type: str
+    room_type: RoomType
     capacity: int
     price: float
     status: RoomStatus

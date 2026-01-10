@@ -1,8 +1,8 @@
-"""Creating initial tables phase-01
+"""creating tables for phase 01
 
-Revision ID: d9411185ec4e
+Revision ID: 520f1a43e5de
 Revises: 
-Create Date: 2026-01-10 22:54:39.356487
+Create Date: 2026-01-10 23:59:20.418881
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'd9411185ec4e'
+revision: str = '520f1a43e5de'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -32,7 +32,7 @@ def upgrade() -> None:
     op.create_table('rooms',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('room_number', sa.Integer(), nullable=False),
-    sa.Column('room_type', sa.String(), nullable=False),
+    sa.Column('room_type', sa.Enum('SINGLE', 'DOUBLE', name='roomtype'), nullable=False),
     sa.Column('capacity', sa.Integer(), nullable=False),
     sa.Column('price', sa.Float(), nullable=False),
     sa.Column('status', sa.Enum('AVAILABLE', 'OCCUPIED', 'MAINTENANCE', name='roomstatus'), nullable=False),
@@ -56,6 +56,7 @@ def upgrade() -> None:
     sa.Column('no_of_guests', sa.Integer(), nullable=False),
     sa.Column('per_night_rate', sa.Float(), nullable=False),
     sa.Column('status', sa.Enum('RESERVED', 'CHECKED_IN', 'CHECKED_OUT', 'CANCELLED', name='reservationstatus'), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['guest_id'], ['guests.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['room_id'], ['rooms.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
@@ -65,6 +66,7 @@ def upgrade() -> None:
     sa.Column('reservation_id', sa.Integer(), nullable=True),
     sa.Column('total_amount', sa.Float(), nullable=False),
     sa.Column('paid', sa.Boolean(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['reservation_id'], ['reservations.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
