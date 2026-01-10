@@ -1,10 +1,10 @@
 from jose import JWTError, jwt
-from ..common.config import settings
+from .config import settings
 from fastapi.security.oauth2 import OAuth2PasswordBearer
 from datetime import datetime, timedelta
 from fastapi import HTTPException, status, Depends
 from .database import SessionLocal
-from ..modules.booking import models
+from . import models
 
 SECRET_KEY = settings.secret_key
 ALGORITHM = settings.algorithm
@@ -28,7 +28,7 @@ def verify_token(token, credentials_error):
         raise credentials_error
     return user_id
 
-def current_user(db:SessionLocal, token = Depends(oauth2_scheme)):
+def get_current_user(db:SessionLocal, token = Depends(oauth2_scheme)):
     credentials_error = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication Error", headers={"WWW-Authenticate":"Bearer"})
 
     user_id = verify_token(token, credentials_error)
