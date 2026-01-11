@@ -1,8 +1,8 @@
-"""creating tables for phase 01
+"""Creating initial tables
 
-Revision ID: 520f1a43e5de
+Revision ID: fc1fdff24f75
 Revises: 
-Create Date: 2026-01-10 23:59:20.418881
+Create Date: 2026-01-11 16:54:32.451042
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '520f1a43e5de'
+revision: str = 'fc1fdff24f75'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -34,8 +34,11 @@ def upgrade() -> None:
     sa.Column('room_number', sa.Integer(), nullable=False),
     sa.Column('room_type', sa.Enum('SINGLE', 'DOUBLE', name='roomtype'), nullable=False),
     sa.Column('capacity', sa.Integer(), nullable=False),
-    sa.Column('price', sa.Float(), nullable=False),
-    sa.Column('status', sa.Enum('AVAILABLE', 'OCCUPIED', 'MAINTENANCE', name='roomstatus'), nullable=False),
+    sa.Column('price', sa.Numeric(precision=10, scale=2), nullable=True),
+    sa.Column('status', sa.Enum('AVAILABLE', 'OCCUPIED', 'MAINTENANCE', 'INACTIVE', name='roomstatus'), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=True),
+    sa.CheckConstraint('capacity > 0', name='check_capacity_more_than_zero'),
+    sa.CheckConstraint('price > 0', name='check_price_more_than_zero'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('room_number')
     )
@@ -54,9 +57,12 @@ def upgrade() -> None:
     sa.Column('check_in', sa.Date(), nullable=False),
     sa.Column('check_out', sa.Date(), nullable=False),
     sa.Column('no_of_guests', sa.Integer(), nullable=False),
-    sa.Column('per_night_rate', sa.Float(), nullable=False),
+    sa.Column('per_night_rate', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('status', sa.Enum('RESERVED', 'CHECKED_IN', 'CHECKED_OUT', 'CANCELLED', name='reservationstatus'), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.CheckConstraint('check_in < check_out', name='check_check_in_before_check_out'),
+    sa.CheckConstraint('no_of_guests > 0', name='check_no_of_guest_not_zero'),
+    sa.CheckConstraint('per_night_rate > 0', name='check_per_night_rate_is_not_zero'),
     sa.ForeignKeyConstraint(['guest_id'], ['guests.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['room_id'], ['rooms.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
@@ -64,7 +70,7 @@ def upgrade() -> None:
     op.create_table('bills',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('reservation_id', sa.Integer(), nullable=True),
-    sa.Column('total_amount', sa.Float(), nullable=False),
+    sa.Column('total_amount', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('paid', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['reservation_id'], ['reservations.id'], ondelete='CASCADE'),
