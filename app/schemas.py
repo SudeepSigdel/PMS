@@ -1,4 +1,3 @@
-from typing import Optional
 from sqlmodel import SQLModel
 from . import models
 
@@ -32,4 +31,3 @@ class RoomUpdate(SQLModel):
     capacity: int | None
     price: float | None
     status: models.RoomStatus | None
-

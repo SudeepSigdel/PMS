@@ -35,7 +35,7 @@ class Room(SQLModel, table=True):
     price: Decimal = Field(sa_column=Column(Numeric(10, 2)))
     status: RoomStatus
     is_active: bool | None = Field(default=True)
-    reservation: List["Reservation"] = Relationship(back_populates="room")
+    reservations: List["Reservation"] = Relationship(back_populates="room")
 
     __table_args__ = (
         CheckConstraint("capacity > 0", name="check_capacity_more_than_zero"),
@@ -48,7 +48,7 @@ class Guest(SQLModel, table=True):
     name: str
     phone: str
     email: EmailStr = Field(unique=True)
-    reservation: List["Reservation"] = Relationship(back_populates="guest")
+    reservations: List["Reservation"] = Relationship(back_populates="guest")
 
 class Reservation(SQLModel, table=True):
     __tablename__="reservations" #type: ignore
@@ -62,9 +62,9 @@ class Reservation(SQLModel, table=True):
     status: ReservationStatus
     created_at: datetime | None = Field(default_factory=datetime.utcnow)
     
-    guest: List["Guest"] = Relationship(back_populates="reservations")
-    room: List["Room"] = Relationship(back_populates="reservations")
-    bill: List["Bill"] = Relationship(back_populates="reservations")
+    guest: "Guest" = Relationship(back_populates="reservations")
+    room: "Room" = Relationship(back_populates="reservations")
+    bill: "Bill" = Relationship(back_populates="reservation")
 
     __table_args__ = (
         CheckConstraint("check_in < check_out", name="check_check_in_before_check_out"),
@@ -79,9 +79,7 @@ class Bill(SQLModel, table= True):
     total_amount: Decimal = Field(sa_column=Column(Numeric(10, 2)))
     paid: bool | None = Field(default=False)
     created_at: datetime | None = Field(default_factory=datetime.utcnow)
-    reservation: List["Reservation"] = Relationship(
-        back_populates="bill"
-    )
+    reservation: "Reservation" = Relationship(back_populates="bill")
 
 class User(SQLModel, table=True):
     __tablename__ = "users" #type: ignore
