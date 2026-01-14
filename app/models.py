@@ -1,10 +1,10 @@
 from sqlmodel import SQLModel, Field, Integer, Column, ForeignKey, Numeric, Relationship
 from pydantic import EmailStr
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from enum import StrEnum
-from sqlalchemy import CheckConstraint
+from sqlalchemy import CheckConstraint, Enum as SAEnum
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 
 class RoomStatus(StrEnum):
     AVAILABLE= "available"
@@ -27,13 +27,13 @@ class RoomType(StrEnum):
     DOUBLE = "double"
 
 class Room(SQLModel, table=True):
-    __tablename__="rooms" #type: ignore
+    __tablename__:str="rooms"
     id: int| None = Field(default=None, primary_key=True)
     room_number: int = Field(unique=True)
-    room_type: RoomType
+    room_type: RoomType = Field(sa_column=Column(SAEnum(RoomType, name="room_type")))
     capacity: int
     price: Decimal = Field(sa_column=Column(Numeric(10, 2)))
-    status: RoomStatus
+    status: RoomStatus = Field(sa_column=Column(SAEnum(RoomStatus, name="room_status")))
     is_active: bool | None = Field(default=True)
     reservations: List["Reservation"] = Relationship(back_populates="room")
 
@@ -43,28 +43,33 @@ class Room(SQLModel, table=True):
     )
 
 class Guest(SQLModel, table=True):
-    __tablename__="guests" #type: ignore
+    __tablename__:str ="guests"
     id: int | None = Field(default=None, primary_key=True)
     name: str
     phone: str
     email: EmailStr = Field(unique=True)
-    reservations: List["Reservation"] = Relationship(back_populates="guest")
+    reservations: List["Reservation"] = Relationship(
+        back_populates="guest",
+        sa_relationship_kwargs={"passive_deletes": True}
+        )
 
 class Reservation(SQLModel, table=True):
-    __tablename__="reservations" #type: ignore
+    __tablename__: str = "reservations"
     id: int | None = Field(default=None, primary_key=True)
-    guest_id: int = Field(sa_column=Column(Integer, ForeignKey("guests.id", ondelete="CASCADE")))
+    guest_id: Optional[int] = Field(sa_column=Column(Integer, ForeignKey("guests.id", ondelete="CASCADE"), nullable=True))
     room_id: int = Field(sa_column=Column(Integer, ForeignKey("rooms.id", ondelete="CASCADE")))
     check_in: date
     check_out: date
     no_of_guests: int
     per_night_rate: Decimal = Field(sa_column=Column(Numeric(10, 2)))
-    status: ReservationStatus
-    created_at: datetime | None = Field(default_factory=datetime.utcnow)
+    status: ReservationStatus = Field(sa_column=Column(SAEnum(ReservationStatus, name="reservation_status")))
+    created_at: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc))
     
-    guest: "Guest" = Relationship(back_populates="reservations")
+    guest: "Guest | None" = Relationship(back_populates="reservations")
     room: "Room" = Relationship(back_populates="reservations")
-    bill: "Bill" = Relationship(back_populates="reservation")
+    bill: "Bill | None" = Relationship(back_populates="reservation",
+                                       sa_relationship_kwargs={"passive_deletes": True, "uselist": False}
+                                       )
 
     __table_args__ = (
         CheckConstraint("check_in < check_out", name="check_check_in_before_check_out"),
@@ -73,17 +78,18 @@ class Reservation(SQLModel, table=True):
     )
 
 class Bill(SQLModel, table= True):
-    __tablename__="bills" #type: ignore
+    __tablename__:str="bills" 
     id: int | None = Field(default = None, primary_key=True)
     reservation_id: int = Field(sa_column=Column(Integer, ForeignKey("reservations.id", ondelete="CASCADE")))
     total_amount: Decimal = Field(sa_column=Column(Numeric(10, 2)))
     paid: bool | None = Field(default=False)
-    created_at: datetime | None = Field(default_factory=datetime.utcnow)
-    reservation: "Reservation" = Relationship(back_populates="bill")
+    created_at: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc))
+    reservation: "Reservation" = Relationship(back_populates="bill",
+                                              sa_relationship_kwargs={"passive_deletes": True})
 
 class User(SQLModel, table=True):
-    __tablename__ = "users" #type: ignore
+    __tablename__: str = "users"
     id: int | None= Field(default=None, primary_key=True)
     username: str = Field(unique=True)
     hashed_password: str
-    role: Roles
+    role: Roles = Field(sa_column=Column(SAEnum(Roles, name="roles")))
